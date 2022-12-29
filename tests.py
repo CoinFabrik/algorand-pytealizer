@@ -29,56 +29,6 @@ def test_transform():
 
 print_transform(test_transform)
 
-def rps_approval():
-
-    @Subroutine(TealType.none)
-    def reset(account: Account):
-        account.opponent = ""
-        account.wager = 0
-        account.commitment = ""
-        account.reveal = ""
-
-    @Subroutine(TealType.uint64)
-    def is_empty(account: Account):
-        return (
-                account.opponent == ""
-            and account.wager == 0
-            and account.commitment == ""
-            and account.reveal == ""
-        )
-
-    @Subroutine(TealType.uint64)
-    def is_valid_play(p: TealType.bytes):
-        first_letter = p[0:1]
-        return (
-                first_letter == "r"
-             or first_letter == "p"
-             or first_letter == "s"
-        )
-
-    @Subroutine(TealType.none)
-    def create_challenge():
-        # basic sanity checks
-        assert Global.group_size() == 2 and Txn.group_index() == 0
-        assert Gtxn[0].rekey_to() == Global.zero_address() \
-           and Gtxn[1].rekey_to() == Global.zero_address()
-        assert (
-                # second transaction is wager payment
-                Gtxn[1].type_enum() == TxnType.Payment
-            and Gtxn[1].receiver() == Global.current_application_address()
-            and Gtxn[1].close_remainder_to() == Global.zero_address()
-                # second account has opted-in
-            and App.optedIn(Txn.accounts[1], Txn.applications[0])
-            and is_empty(Txn.accounts[0])
-            and is_empty(Txn.accounts[1])
-                # commitment
-            and Txn.application_args.length() == 2
-        )
-        Txn.sender().opponent = Txn.accounts[1]
-        Txn.sender().wager = Gtxn[1].amount()
-        Txn.sender().commitment = Txn.application_args[1]
-        raise Approve
-
 @Pytealize
 def counter_approval():
     global owner          # byteslice
